@@ -1,0 +1,47 @@
+.venv
+node_modules
+build
+guides
+notebooks
+videos
+GPT\ talks
+**.egg-info
+dbs
+__pycache__
+*.ipynb
+
+.venv
+.streamlit
+secrets.json
+__pycache__
+entity_ai.egg-info
+videos
+GPT talks
+dbs
+logs
+langflow.db
+.coverage
+.pytest_cache
+
+# dependencies
+node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# production
+/build
+
+# misc
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
