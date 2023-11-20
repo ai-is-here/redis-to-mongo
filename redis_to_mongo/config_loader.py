@@ -1,6 +1,6 @@
 import json
 import os
-from logger import logger
+from redis_to_mongo.logger import logger
 
 
 class Config:

@@ -1,5 +1,5 @@
 import redis
-from logger import logger
+from redis_to_mongo.logger import logger
 from typing import Any, cast
 
 
@@ -35,8 +35,10 @@ class RedisHandler:
     DB_NUMBER = 0
     SET_MARKER = ":SET"
 
-    def __init__(self, host: str = "localhost", port: int = 6379, db: int = 0) -> None:
-        self.client = RedisSingleton.get_instance(host, port, db=self.DB_NUMBER)
+    def __init__(
+        self, host: str = "localhost", port: int = 6379, db: int = DB_NUMBER
+    ) -> None:
+        self.client = RedisSingleton.get_instance(host, port, db=db)
 
     def read_messages(
         self,
