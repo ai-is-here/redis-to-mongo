@@ -33,7 +33,7 @@ class RedisSingleton:
 
 class RedisHandler:
     DB_NUMBER = 0
-    SET_MARKER = ":SET"
+    SET_MARKER = ":ZSET"
 
     def __init__(
         self, host: str = "localhost", port: int = 6379, db: int = DB_NUMBER
