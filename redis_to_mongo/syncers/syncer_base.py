@@ -7,6 +7,10 @@ from redis_to_mongo.logger import logger
 from redis_to_mongo.config_loader import Config
 
 
+# string, list, set, zset, hash and stream
+# https://redis.io/commands/type/
+
+
 class SyncTypeInterface(ABC):
     TYPE = None  # To be defined by each child class
     ODM_CLASS: type[BaseDocument] | None = None

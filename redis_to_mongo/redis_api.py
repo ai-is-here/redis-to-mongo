@@ -67,6 +67,18 @@ class RedisHandler:
             logger.error(f"Error retrieving values from set {set_name}: {str(e)}")
             raise e
 
+    def get_set(self, set_name: str) -> list[str]:
+        """
+        Returns all values from the given ordered set.
+        """
+        try:
+            set_values = self.client.sget(set_name)  # type: ignore
+            logger.debug(f"Retrieved all values from set {set_name}: {set_values}")
+            return cast(list[str], list(set_values))
+        except Exception as e:
+            logger.error(f"Error retrieving values from set {set_name}: {str(e)}")
+            raise e
+
     def get_sync_keys(self) -> list[str]:
         """
         Efficiently structures Redis keys into streams and sets.

@@ -19,7 +19,7 @@ class SyncStreams(SyncTypeInterface):
 
     def sync_structure(self, key_types: list[str]):
         super().sync_structure(key_types)
-        for key, odm_id in self.odm_ids.items():
+        for key in self.odm_ids:
             if key not in self.last_read_ids:
                 self.last_read_ids[key] = "0-0"
 

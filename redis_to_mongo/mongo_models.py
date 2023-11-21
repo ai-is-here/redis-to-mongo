@@ -9,7 +9,7 @@ from mongoengine import (
 from mongoengine.queryset.base import DO_NOTHING as MONGO_REF_DELETE_DO_NOTHING
 import datetime
 
-WEEK_POSTFIX = datetime.datetime.utcnow().strftime("%Y_week_%W")
+DATE_BASED_POSTFIX = datetime.datetime.utcnow().strftime("%Y_month_%m")
 
 
 from mongoengine import Document
@@ -30,21 +30,57 @@ class BaseDocument(Document):
         return super().update(*args, **kwargs)
 
 
-class OrderedSet(BaseDocument):
+class JSONODM(BaseDocument):
     key = StringField(required=True, unique=True)
-    values = ListField(DictField(), default=[])
+    value = DictField(default={})
     meta = {
-        "collection": f"ordered_set_{WEEK_POSTFIX}",
+        "collection": f"json_{DATE_BASED_POSTFIX}",
         "indexes": ["key"],
     }
 
 
-class Stream(BaseDocument):
+class StringODM(BaseDocument):
+    key = StringField(required=True, unique=True)
+    value = StringField(default="")
+    meta = {
+        "collection": f"string_{DATE_BASED_POSTFIX}",
+        "indexes": ["key"],
+    }
+
+
+class ListODM(BaseDocument):
+    key = StringField(required=True, unique=True)
+    values = ListField(StringField, default=[])
+    meta = {
+        "collection": f"list_{DATE_BASED_POSTFIX}",
+        "indexes": ["key"],
+    }
+
+
+class ZSetODM(BaseDocument):
+    key = StringField(required=True, unique=True)
+    values = ListField(DictField(), default=[])
+    meta = {
+        "collection": f"zset_{DATE_BASED_POSTFIX}",
+        "indexes": ["key"],
+    }
+
+
+class SetODM(BaseDocument):
+    key = StringField(required=True, unique=True)
+    values = ListField(StringField, default=[])
+    meta = {
+        "collection": f"set_{DATE_BASED_POSTFIX}",
+        "indexes": ["key"],
+    }
+
+
+class StreamODM(BaseDocument):
     key = StringField(required=True, unique=True)
     last_redis_read_id = StringField(default="0-0")
 
     meta = {
-        "collection": f"stream_{WEEK_POSTFIX}",
+        "collection": f"stream_{DATE_BASED_POSTFIX}",
         "indexes": ["key"],
     }
 
@@ -52,12 +88,12 @@ class Stream(BaseDocument):
 class StreamMessage(BaseDocument):
     created_at = DateTimeField(default=datetime.datetime.utcnow)
     stream = ReferenceField(
-        Stream, reverse_delete_rule=MONGO_REF_DELETE_DO_NOTHING, required=True
+        StreamODM, reverse_delete_rule=MONGO_REF_DELETE_DO_NOTHING, required=True
     )
     rid = StringField(required=True)  # id of the message in redis, convinent to sort by
     content = DictField(required=True)  # JSON payload
 
     meta = {
-        "collection": f"stream_message_{WEEK_POSTFIX}",
+        "collection": f"stream_message_{DATE_BASED_POSTFIX}",
         "indexes": ["stream", "rid"],
     }
