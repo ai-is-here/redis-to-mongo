@@ -6,9 +6,13 @@ from redis_to_mongo.config_loader import Config
 class RedisHandler:
     DB_NUMBER = 0
     SET_MARKER = ":ZSET"
+    _instance = None
 
-    def __init__(self, config: Config) -> None:
-        self.client = self._initialize_redis_client(config)
+    def __new__(cls, config: Config):
+        if cls._instance is None:
+            cls._instance = super(RedisHandler, cls).__new__(cls)
+            cls._instance.client = cls._instance._initialize_redis_client(config)
+        return cls._instance
 
     def _initialize_redis_client(self, config: Config) -> redis.Redis:
         try:
