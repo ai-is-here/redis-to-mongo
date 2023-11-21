@@ -1,44 +1,30 @@
 import redis
 from redis_to_mongo.logger import logger
-from typing import Any, cast
-
-
-class RedisSingleton:
-    _instance: redis.Redis | None = None
-
-    @staticmethod
-    def get_instance(
-        host: str = "localhost", port: int = 6379, db: int = 0
-    ) -> redis.Redis:
-        if RedisSingleton._instance is None:
-            RedisSingleton(host=host, port=port, db=db)
-        return RedisSingleton._instance  # type: ignore
-
-    def __init__(self, host: str = "localhost", port: int = 6379, db: int = 0):
-        if RedisSingleton._instance is not None:
-            raise Exception("This class is a singleton!")
-        else:
-            try:
-                self.client: redis.Redis = redis.Redis(
-                    host=host, port=port, db=db, decode_responses=True
-                )
-                logger.debug(
-                    f"Redis client initialized with host={host}, port={port}, db={db}"
-                )
-            except Exception as e:
-                logger.error(f"Error initializing Redis client: {str(e)}")
-                raise e
-            RedisSingleton._instance = self.client
+from redis_to_mongo.config_loader import Config
 
 
 class RedisHandler:
     DB_NUMBER = 0
     SET_MARKER = ":ZSET"
 
-    def __init__(
-        self, host: str = "localhost", port: int = 6379, db: int = DB_NUMBER
-    ) -> None:
-        self.client = RedisSingleton.get_instance(host, port, db=db)
+    def __init__(self, config: Config) -> None:
+        self.client = self._initialize_redis_client(config)
+
+    def _initialize_redis_client(self, config: Config) -> redis.Redis:
+        try:
+            client: redis.Redis = redis.Redis(
+                host=config.config["redis_host"],
+                port=config.config["redis_port"],
+                db=self.DB_NUMBER,
+                decode_responses=True,
+            )
+            logger.debug(
+                f"Redis client initialized with host={config.config['redis_host']}, port={config.config['redis_port']}, db={self.DB_NUMBER}"
+            )
+            return client
+        except Exception as e:
+            logger.error(f"Error initializing Redis client: {str(e)}")
+            raise e
 
     def read_messages(
         self,
