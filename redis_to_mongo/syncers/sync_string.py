@@ -3,7 +3,7 @@ from redis_to_mongo.mongo_models import StringODM
 from redis_to_mongo.syncers.syncer_base import SyncTypeInterface
 
 
-class SyncUsualSets(SyncTypeInterface):
+class SyncStrings(SyncTypeInterface):
     TYPE = "string"
     ODM_CLASS = StringODM
 

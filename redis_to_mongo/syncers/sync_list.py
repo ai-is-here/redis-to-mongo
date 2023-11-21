@@ -3,7 +3,7 @@ from redis_to_mongo.mongo_models import ListODM
 from redis_to_mongo.syncers.syncer_base import SyncTypeInterface
 
 
-class SyncUsualSets(SyncTypeInterface):
+class SyncLists(SyncTypeInterface):
     TYPE = "list"
     ODM_CLASS = ListODM
 

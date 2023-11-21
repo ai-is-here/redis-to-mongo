@@ -1,12 +1,12 @@
 from typing import Any
 from pymongo import InsertOne
-from redis_to_mongo.mongo_models import Stream
+from redis_to_mongo.mongo_models import StreamODM
 from redis_to_mongo.syncers.syncer_base import SyncTypeInterface
 
 
 class SyncStreams(SyncTypeInterface):
     TYPE = "stream"
-    ODM_CLASS = Stream
+    ODM_CLASS = StreamODM
 
     def init(self, key_types: dict[str, str]):
         super().init(key_types)

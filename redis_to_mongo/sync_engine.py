@@ -3,15 +3,11 @@ from collections import defaultdict
 
 from redis_to_mongo.config_loader import Config
 from redis_to_mongo.logger import logger
-from redis_to_mongo.mongo_models import Stream, StreamMessage
+from redis_to_mongo.syncers import *
 from redis_to_mongo.redis_api import RedisHandler
 
 from redis_to_mongo.mongo_api import MongoHandler
 
-
-STREAM_NAME_INFO_PART = ":info:"
-        all_keys = self.redis_handler.get_sync_keys()
-        key_types = self.redis_handler.get_types(all_keys)
 
 class SyncEngine:
     """
@@ -26,90 +22,35 @@ class SyncEngine:
             f"Path to patch MongoHandler: {MongoHandler.__module__}.{MongoHandler.__name__}"
         )
         self.mongo_handler = MongoHandler(config)
-        self.init_streams()
+        self.init_syncers()
 
-    def init_streams(self) -> None:
-        """
-        Initialize the streams dictionary with all existing streams in MongoDB.
-        """
-        self.streams = {}
-        for stream in Stream.objects().all():
-            self.streams[stream.name] = stream
+    def init_syncers(self):
+        key_types = self.redis_handler.get_all_key_types()
+        self.syncers: list[SyncTypeInterface] = []
+        syncer_classes = [
+            SyncJSONs,
+            SyncLists,
+            SyncSets,
+            SyncStreams,
+            SyncStrings,
+            SyncZSets,
+        ]
+        for syncer in syncer_classes:
+            s = syncer(self.config, self.redis_handler)
+            s.init(key_types)
+            self.syncers.append(s)
 
-    def sync_keys_structure(self) -> dict[str, list[str]]:
-        """
-        Synchronize the structure of keys between Redis and MongoDB.
-        """
-        sync_keys = self.redis_handler.get_sync_keys()
-        for stream in sync_keys["streams"]:
-            if stream not in self.streams:
-                # Create new MetaStream and update self.streams
-                new_stream_odm = Stream(name=stream).save()
-                self.streams[stream] = new_stream_odm
-        return sync_keys
-
-    def sync(self) -> None:
-        """
-        Synchronize data between Redis and MongoDB.
-        """
-        sync_keys = self.sync_keys_structure()
-        last_ids = {name: odm.last_redis_read_id for name, odm in self.streams.items()}
-        messages = self.redis_handler.read_messages(
-            last_ids,
-            count=self.config.messages_per_stream,
-        )
-        for stream_name, message_list in messages.items():
-            try:
-                if message_list:
-                    self.send_stream_messages_to_mongo(stream_name, messages)
-            except Exception as e:
-                logger.error(f"Error processing stream {stream_name}: {e}")
-        self.update_sets_in_mongo(sync_keys["sets"])
-
-    def send_stream_messages_to_mongo(self, stream_name: str, messages: dict) -> None:
-        """
-        Send stream messages from Redis to MongoDB.
-        """
-        try:
-            stream_type = stream_name.split(STREAM_NAME_INFO_PART)
-            if len(stream_type) < 1:
-                stream_type = "main"
-            else:
-                stream_type = stream_type[-1]
-            for message in messages:
-                new_message = StreamMessage(
-                    meta_stream=self.streams[stream_name],
-                    content=dict(message),
-                    type=stream_type,
+    def sync(self):
+        key_types = self.redis_handler.get_all_key_types()
+        implemented_types = set(syncer.TYPE for syncer in self.syncers)
+        for key in list(key_types.keys()):
+            if key_types[key] not in implemented_types:
+                logger.warning(
+                    f"Key {key} has unsupported type {key_types[key]} and will be removed from synchronization. Allowed types: {implemented_types=}."
                 )
-                new_message.save()
-            self.streams[stream_name].update(
-                last_redis_read_id=messages[-1]["id"],
-            )
-        except Exception as e:
-            logger.error(f"Error updating MongoDB for stream {stream_name}: {e}")
-
-    def update_sets_in_mongo(self, sets: list[str]) -> None:
-        """
-        Update sets in MongoDB with data from Redis.
-        """
-        streams_with_sets = defaultdict(list)
-        for name in sets:
-            stream_name = name.split(STREAM_NAME_INFO_PART)[0]
-            streams_with_sets[stream_name].append(name)
-
-        for stream, metadata_sets in streams_with_sets.items():
-            stream_odm = self.streams[stream]
-            try:
-                for set_name in metadata_sets:
-                    stream_odm.metadata_sets[set_name] = self.redis_handler.get_set(
-                        set_name
-                    )
-                stream_odm.save()
-            except Exception as e:
-                logger.error(
-                    f"Error updating set data in MongoDB for stream {stream_odm.name}: {e}"
-                )
+                del key_types[key]
+        for syncer in self.syncers:
+            syncer.sync(key_types)
 
     def run(self) -> None:
         """

@@ -3,7 +3,7 @@ from redis_to_mongo.mongo_models import JSONODM
 from redis_to_mongo.syncers.syncer_base import SyncTypeInterface
 
 
-class SyncUsualSets(SyncTypeInterface):
+class SyncJSONs(SyncTypeInterface):
     TYPE = "ReJSON-RL"
     ODM_CLASS = JSONODM
 

@@ -79,7 +79,48 @@ class RedisHandler:
             logger.error(f"Error retrieving values from set {set_name}: {str(e)}")
             raise e
 
-    def get_sync_keys(self) -> list[str]:
+    def get_all_key_types(self) -> dict[str, str]:
+        all_keys = self.get_all_keys()
+        key_types = self.get_types(all_keys)
+        return key_types
+
+    def get_json(self, key: str) -> dict[Any, Any]:
+        """
+        Returns the value of the given key as a JSON object.
+        """
+        try:
+            json_value = self.client.json().get(key)  # type: ignore
+            logger.debug(f"Retrieved JSON value for key {key}: {json_value}")
+            return json_value
+        except Exception as e:
+            logger.error(f"Error retrieving JSON value for key {key}: {str(e)}")
+            raise e
+
+    def get_list(self, key: str) -> list:
+        """
+        Returns all values from the list stored at the given key.
+        """
+        try:
+            list_values = self.client.lrange(key, 0, -1)  # type: ignore
+            logger.debug(f"Retrieved all values from list {key}: {list_values}")
+            return list_values
+        except Exception as e:
+            logger.error(f"Error retrieving values from list {key}: {str(e)}")
+            raise e
+
+    def get_string(self, key: str) -> str:
+        """
+        Returns the string value of the given key.
+        """
+        try:
+            string_value = self.client.get(key)  # type: ignore
+            logger.debug(f"Retrieved string value for key {key}: {string_value}")
+            return string_value
+        except Exception as e:
+            logger.error(f"Error retrieving string value for key {key}: {str(e)}")
+            raise e
+
+    def get_all_keys(self) -> list[str]:
         """
         Efficiently structures Redis keys into streams and sets.
         Sorts keys by length to process main streams first.

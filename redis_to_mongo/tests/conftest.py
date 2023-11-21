@@ -2,7 +2,7 @@ import pytest
 from redis_to_mongo.sync_engine import SyncEngine
 from redis_to_mongo.mongo_api import MongoHandler
 from redis_to_mongo.redis_api import RedisHandler
-from redis_to_mongo.mongo_models import Stream, StreamMessage
+from redis_to_mongo.mongo_models import StreamODM, StreamMessage
 from redis_to_mongo.config_loader import Config
 from redis_to_mongo.constants import TEST_CONFIG_ENV
 
@@ -39,35 +39,21 @@ def data_dict():
     # Define data dict to populate with
     return {
         "streams": [f"public:streams:test{i}" for i in range(NUMBER_OF_CONTAINERS)],
-        "additional_streams": [
-            f"public:streams:test{i}:info:events" for i in range(NUMBER_OF_CONTAINERS)
-        ]
-        + [
-            f"public:streams:test{i}:info:abracadabra"
-            for i in range(NUMBER_OF_CONTAINERS)
+        "sets": [
+            f"public:streams:test{i}:info:someset" for i in range(NUMBER_OF_CONTAINERS)
         ],
         "zsets": [
-            f"public:streams:test{i}:info:online:ZSET"
-            for i in range(NUMBER_OF_CONTAINERS)
+            f"public:streams:test{i}:info:somezset" for i in range(NUMBER_OF_CONTAINERS)
         ],
-        "unk": {
-            "sets": [
-                f"public:streams:test{i}:info:someset:SET"
-                for i in range(NUMBER_OF_CONTAINERS)
-            ]
-            + [
-                f"public:streams:test{i}:someset:SET"
-                for i in range(NUMBER_OF_CONTAINERS)
-            ],
-            "lists": [
-                f"public:streams:test{i}:info:somelist:SET"
-                for i in range(NUMBER_OF_CONTAINERS)
-            ]
-            + [
-                f"public:streams:test{i}:somelist:SET"
-                for i in range(NUMBER_OF_CONTAINERS)
-            ],
-        },
+        "lists": [
+            f"public:streams:test{i}:somelist" for i in range(NUMBER_OF_CONTAINERS)
+        ],
+        "strings": [
+            f"public:streams:test{i}:somestring" for i in range(NUMBER_OF_CONTAINERS)
+        ],
+        "jsons": [
+            f"public:streams:test{i}:somejson" for i in range(NUMBER_OF_CONTAINERS)
+        ],
     }
 
 
@@ -80,15 +66,6 @@ def redis_populate_main_streams(redis_handler, data_dict):
 
 
 @pytest.fixture
-def redis_populate_additional_streams(redis_handler, data_dict):
-    for i, stream in enumerate(data_dict["additional_streams"]):
-        for j in range(NUMBER_OF_ITEMS):
-            redis_handler.client.xadd(
-                stream, {"message": f"additional_test_message{j}"}
-            )
-
-
-@pytest.fixture
 def redis_populate_zsets(redis_handler, data_dict):
     for i, zset in enumerate(data_dict["zsets"]):
         for j in range(NUMBER_OF_ITEMS):
@@ -96,19 +73,49 @@ def redis_populate_zsets(redis_handler, data_dict):
 
 
 @pytest.fixture
-def redis_populate_with_unknown_data_type_set(redis_handler, data_dict):
+def redis_populate_set(redis_handler, data_dict):
     # Populate Redis with unknown data type set
-    for i, set_key in enumerate(data_dict["unk"]["sets"]):
+    for i, set_key in enumerate(data_dict["sets"]):
         for j in range(NUMBER_OF_ITEMS):
             redis_handler.client.sadd(set_key, f"set_test_member{j}")
 
 
 @pytest.fixture
-def redis_populate_with_unknown_data_type_list(redis_handler, data_dict):
+def redis_populate_list(redis_handler, data_dict):
     # Populate Redis with unknown data type list
-    for i, list_key in enumerate(data_dict["unk"]["lists"]):
+    for i, list_key in enumerate(data_dict["lists"]):
         for j in range(NUMBER_OF_ITEMS):
             redis_handler.client.lpush(list_key, f"list_test_member{j}")
+
+
+@pytest.fixture
+def redis_populate_string(redis_handler, data_dict):
+    # Populate Redis with unknown data type string
+    for i, string_key in enumerate(data_dict["strings"]):
+        for j in range(NUMBER_OF_ITEMS):
+            redis_handler.client.set(string_key, f"string_test_value{j}")
+
+
+@pytest.fixture
+def redis_populate_json(redis_handler, data_dict):
+    # Populate Redis with unknown data type json
+    for i, json_key in enumerate(data_dict["jsons"]):
+        for j in range(NUMBER_OF_ITEMS):
+            redis_handler.client.json().set(
+                json_key, ".", {"json_test_key": f"json_test_value{j}"}
+            )
+
+
+@pytest.fixture
+def redis_populate_all(
+    redis_populate_main_streams,
+    redis_populate_zsets,
+    redis_populate_set,
+    redis_populate_list,
+    redis_populate_string,
+    redis_populate_json,
+):
+    pass
 
 
 @pytest.fixture
