@@ -72,7 +72,7 @@ class RedisHandler:
         Returns all values from the given ordered set.
         """
         try:
-            set_values = self.client.sget(set_name)  # type: ignore
+            set_values = self.client.smembers(set_name)  # type: ignore
             logger.debug(f"Retrieved all values from set {set_name}: {set_values}")
             return cast(list[str], list(set_values))
         except Exception as e:
