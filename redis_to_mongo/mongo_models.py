@@ -32,7 +32,7 @@ class BaseDocument(Document):
 
 class OrderedSet(BaseDocument):
     key = StringField(required=True, unique=True)
-    values = ListField(DictField(), required=True)
+    values = ListField(DictField(), default=[])
     meta = {
         "collection": f"ordered_set_{WEEK_POSTFIX}",
         "indexes": ["key"],
@@ -41,7 +41,7 @@ class OrderedSet(BaseDocument):
 
 class Stream(BaseDocument):
     key = StringField(required=True, unique=True)
-    last_redis_read_id = StringField(default="0")
+    last_redis_read_id = StringField(default="0-0")
 
     meta = {
         "collection": f"stream_{WEEK_POSTFIX}",
@@ -54,9 +54,10 @@ class StreamMessage(BaseDocument):
     stream = ReferenceField(
         Stream, reverse_delete_rule=MONGO_REF_DELETE_DO_NOTHING, required=True
     )
+    rid = StringField(required=True)  # id of the message in redis, convinent to sort by
     content = DictField(required=True)  # JSON payload
 
     meta = {
         "collection": f"stream_message_{WEEK_POSTFIX}",
-        "indexes": ["stream"],
+        "indexes": ["stream", "rid"],
     }

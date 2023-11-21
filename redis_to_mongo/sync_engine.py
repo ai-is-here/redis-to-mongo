@@ -10,7 +10,8 @@ from redis_to_mongo.mongo_api import MongoHandler
 
 
 STREAM_NAME_INFO_PART = ":info:"
-
+        all_keys = self.redis_handler.get_sync_keys()
+        key_types = self.redis_handler.get_types(all_keys)
 
 class SyncEngine:
     """

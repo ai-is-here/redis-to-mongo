@@ -14,10 +14,11 @@ NUMBER_OF_ITEMS = 3
 def clear_dbs():
     # not for parallel consumption haha and not for prod
     # Clear Redis and MongoDB databases before each test
-    redis_handler = RedisHandler(Config(TEST_CONFIG_ENV))
+    config = Config(TEST_CONFIG_ENV)
+    redis_handler = RedisHandler(config)
     redis_handler.client.flushdb()
 
-    mongo_handler = MongoHandler(Config(TEST_CONFIG_ENV))
+    mongo_handler = MongoHandler(config)
     mongo_handler.client.drop_database(mongo_handler.db.name)
 
 
@@ -120,11 +121,25 @@ def mongo_populate_ordered_set(mongo_handler, data_dict):
 
 
 @pytest.fixture
-def mongo_populate_stream(mongo_handler, data_dict):
+def mongo_populate_main_streams(mongo_handler, data_dict):
     # Populate MongoDB with Stream objects
+    streams = []
     for i, stream_key in enumerate(data_dict["streams"]):
         stream = Stream(key=stream_key, last_redis_read_id="0")
         stream.save()
+        streams.append(stream)
+    return streams
+
+
+@pytest.fixture
+def mongo_populate_additional_streams(mongo_handler, data_dict):
+    # Populate MongoDB with Stream objects
+    streams = []
+    for i, stream_key in enumerate(data_dict["additional_streams"]):
+        stream = Stream(key=stream_key, last_redis_read_id="0")
+        stream.save()
+        streams.append(stream)
+    return streams
 
 
 @pytest.fixture

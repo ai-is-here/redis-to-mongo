@@ -20,8 +20,8 @@ class Config:
         file_config = dotenv_values(config_file)
         config_vars = {
             "mongo_db_name": "MONGO_DB_NAME",
-            "mongo_username": "MONGO_USERNAME",
-            "mongo_password": "MONGO_PASSWORD",
+            "mongo_username": "MONGO_DB_USER",
+            "mongo_password": "MONGO_DB_PASSWORD",
             "mongo_host": "MONGO_HOST",
             "redis_host": "REDIS_HOST",
             "redis_port": "REDIS_PORT",

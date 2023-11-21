@@ -1,3 +1,4 @@
+from typing import Any, cast
 import redis
 from redis_to_mongo.logger import logger
 from redis_to_mongo.config_loader import Config
@@ -5,7 +6,6 @@ from redis_to_mongo.config_loader import Config
 
 class RedisHandler:
     DB_NUMBER = 0
-    SET_MARKER = ":ZSET"
     _instance = None
 
     def __new__(cls, config: Config):
@@ -34,7 +34,7 @@ class RedisHandler:
         self,
         last_read_ids: dict[str, str],
         count: int = 10,
-        block: int = 1,
+        block: int = 0,
     ) -> dict[str, list[tuple[str, dict[str, str]]]]:
         try:
             messages = self.client.xread(  # type: ignore
@@ -55,19 +55,19 @@ class RedisHandler:
             )
             raise e
 
-    def get_set(self, set_name: str) -> list[str]:
+    def get_ordered_set(self, set_name: str) -> list[dict[str, Any]]:
         """
-        Returns all values from the given set.
+        Returns all values from the given ordered set.
         """
         try:
-            set_values = self.client.zrange(set_name, 0, -1, withscores=False)  # type: ignore
+            set_values = self.client.zrange(set_name, 0, -1, withscores=True)  # type: ignore
             logger.debug(f"Retrieved all values from set {set_name}: {set_values}")
-            return cast(list[str], set_values)
+            return cast(list[dict[str, Any]], set_values)
         except Exception as e:
             logger.error(f"Error retrieving values from set {set_name}: {str(e)}")
             raise e
 
-    def get_sync_keys(self) -> dict[str, Any]:
+    def get_sync_keys(self) -> list[str]:
         """
         Efficiently structures Redis keys into streams and sets.
         Sorts keys by length to process main streams first.
@@ -76,22 +76,19 @@ class RedisHandler:
             all_keys = sorted(
                 list(self.client.scan_iter(match="*")), key=len
             )  # Sort by string length
-            all_keys = cast(list[str], all_keys)
-            sets = []
-            streams = []
-
-            for key in all_keys:
-                if key.endswith(self.SET_MARKER):
-                    # It's a set related to the main stream
-                    sets.append(key)
-                else:
-                    # It's a metadata stream related to the main stream
-                    streams.append(key)
-
-            logger.debug(
-                f"Stream structure retrieved: streams: {streams} and sets: {sets}"
-            )
-            return {"streams": streams, "sets": sets}
+            return cast(list[str], all_keys)
         except Exception as e:
             logger.error(f"Error retrieving stream structure: {str(e)}")
+            raise e
+
+    def get_types(self, keys: list[str]) -> dict[str, str]:
+        """
+        Returns a dictionary with the Redis type for each key in the provided list.
+        """
+        try:
+            key_types = {key: self.client.type(key) for key in keys}  # type: ignore
+            logger.debug(f"Retrieved types for keys: {key_types}")
+            return key_types
+        except Exception as e:
+            logger.error(f"Error retrieving types for keys: {str(e)}")
             raise e
