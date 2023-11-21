@@ -1,10 +1,10 @@
 import time
 from collections import defaultdict
 
-from config_loader import Config
-from logger import logger
-from mongo_models import Stream, StreamMessage
-from redis_api import RedisHandler
+from redis_to_mongo.config_loader import Config
+from redis_to_mongo.logger import logger
+from redis_to_mongo.mongo_models import Stream, StreamMessage
+from redis_to_mongo.redis_api import RedisHandler
 
 from redis_to_mongo.mongo_api import MongoHandler
 
@@ -22,6 +22,9 @@ class SyncEngine:
         self.config = config
         self.redis_handler = RedisHandler(
             host=config.redis_host, port=config.redis_port
+        )
+        print(
+            f"Path to patch MongoHandler: {MongoHandler.__module__}.{MongoHandler.__name__}"
         )
         self.mongo_handler = MongoHandler(config)
         self.init_streams()
