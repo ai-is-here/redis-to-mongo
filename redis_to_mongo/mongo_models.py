@@ -39,35 +39,35 @@ class KeyedDocument(BaseDocument):
 
 
 class JSONODM(KeyedDocument):
-    value = DictField(default={})
+    value = DictField(default=None)
     meta = {
         "collection": f"json_{DATE_BASED_POSTFIX}",
     }
 
 
 class StringODM(KeyedDocument):
-    value = StringField(default="")
+    value = StringField(default=None)
     meta = {
         "collection": f"string_{DATE_BASED_POSTFIX}",
     }
 
 
 class ListODM(KeyedDocument):
-    values = ListField(StringField, default=[])
+    values = ListField(StringField(), default=[])
     meta = {
         "collection": f"list_{DATE_BASED_POSTFIX}",
     }
 
 
 class ZSetODM(KeyedDocument):
-    values = ListField(DictField(), default=[])
+    values = ListField(DictField(), default=None)
     meta = {
         "collection": f"zset_{DATE_BASED_POSTFIX}",
     }
 
 
 class SetODM(KeyedDocument):
-    values = ListField(StringField, default=[])
+    values = ListField(StringField(), default=None)
     meta = {
         "collection": f"set_{DATE_BASED_POSTFIX}",
     }

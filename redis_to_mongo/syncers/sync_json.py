@@ -11,6 +11,7 @@ class SyncJSONs(SyncTypeInterface):
         updates = {}
         for key, odm_id in self.odm_ids.items():
             redis_json = self.redis_handler.get_json(key)
-            # skipping change check
-            updates[odm_id] = {"value": redis_json}
+            odm = self.get_odm_class().objects(id=odm_id).first()
+            if redis_json != odm.value:
+                updates[odm_id] = {"value": redis_json}
         return updates

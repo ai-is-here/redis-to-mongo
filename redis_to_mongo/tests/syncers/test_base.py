@@ -50,9 +50,46 @@ def test_bulk_write_ops(mongo_handler):
         assert updated_odm.value == value
 
 
+def test_no_ops_empty_for_bulk_write(mongo_handler):
+    sync_strings = SyncStrings(None, None)
+    operations = []
+    sync_strings.bulk_write_ops(operations, False)
+    assert StringODM.objects.count() == 0
+
+
 def test_sync_structure(mongo_handler):
     sync_strings = SyncStrings(None, None)
     keys = ["key1", "key2"]
+    sync_strings.sync_structure(keys)
+    for key in keys:
+        assert key in sync_strings.odm_ids
+        assert StringODM.objects(key=key).first() is not None
+
+
+def test_sync_structure_key_removal(mongo_handler):
+    sync_strings = SyncStrings(None, None)
+    keys = ["key1", "key2"]
+    sync_strings.sync_structure(keys)
+    keys.remove("key1")
+    sync_strings.sync_structure(keys)
+    assert "key1" not in sync_strings.odm_ids
+    assert StringODM.objects(key="key1").first() is not None
+    assert "key2" in sync_strings.odm_ids
+    assert StringODM.objects(key="key2").first() is not None
+
+
+def test_sync_structure_key_removal_and_addition(mongo_handler):
+    sync_strings = SyncStrings(None, None)
+    keys = ["key1", "key2"]
+    sync_strings.sync_structure(keys)
+    for key in keys:
+        assert key in sync_strings.odm_ids
+        assert StringODM.objects(key=key).first() is not None
+    keys.remove("key1")
+    sync_strings.sync_structure(keys)
+    assert "key1" not in sync_strings.odm_ids
+    assert StringODM.objects(key="key1").first() is not None
+    keys.append("key1")
     sync_strings.sync_structure(keys)
     for key in keys:
         assert key in sync_strings.odm_ids

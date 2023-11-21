@@ -31,35 +31,39 @@ class SyncTypeInterface(ABC):
 
     def init(self, key_types: dict[str, str]):
         keys = self.filter_key_types(key_types)
-        for key in keys:
-            odm = self.get_odm_class().objects(key=key).first()
-            if odm:
-                self.odm_ids[key] = odm.id
         self.sync_structure(keys)
 
     def sync_structure(self, keys: list[str]):
         for key in keys:
             if key not in self.odm_ids:
-                new_odm = self.get_odm_class()(key=key)
-                new_odm.save()
-                self.odm_ids[key] = new_odm.id
+                odm = self.get_odm_class().objects(key=key).first()
+                if odm:
+                    self.odm_ids[key] = odm.id
+                else:
+                    new_odm = self.get_odm_class()(key=key)
+                    new_odm.save()
+                    self.odm_ids[key] = new_odm.id
+        for odm_key in list(self.odm_ids.keys()):
+            if odm_key not in keys:
+                self.odm_ids.pop(odm_key)
 
     def sync(self, key_types: dict[str, str]):
         keys = self.filter_key_types(key_types)
         self.sync_structure(keys)
-        updates = self._sync(keys)
+        updates = self._sync()
         self.bulk_update(updates, False)
 
     @abstractmethod
-    def _sync(self, keys: list[str]) -> dict[str, dict[str, Any]]:
+    def _sync(self) -> dict[str, dict[str, Any]]:
         pass
 
     def bulk_update(self, updates: dict[str, dict[str, Any]], ordered) -> None:
         operations = [
-            UpdateOne({"_id": str(_id)}, {"$set": update})
-            for _id, update in updates.items()
+            UpdateOne({"_id": _id}, {"$set": update}) for _id, update in updates.items()
         ]
         self.bulk_write_ops(operations, ordered)
 
     def bulk_write_ops(self, operations, ordered):
+        if not operations:
+            return
         self.get_odm_class()._get_collection().bulk_write(operations, ordered=ordered)
