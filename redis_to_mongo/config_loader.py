@@ -3,8 +3,11 @@ import os
 from redis_to_mongo.logger import logger
 
 
+from dotenv import dotenv_values
+
+
 class Config:
-    def __init__(self, config_file: str = "config.json"):
+    def __init__(self, config_file: str = ".env"):
         """
         Initialize the Config class and load the configuration.
         """
@@ -14,27 +17,28 @@ class Config:
         """
         Load the configuration from the environment variables and the config file.
         """
-        config = {
-            "mongo_db_name": os.getenv("MONGO_DB_NAME"),
-            "mongo_username": os.getenv("MONGO_USERNAME"),
-            "mongo_password": os.getenv("MONGO_PASSWORD"),
-            "mongo_host": os.getenv("MONGO_HOST"),
-            "redis_host": os.getenv("REDIS_HOST"),
-            "redis_port": os.getenv("REDIS_PORT"),
-            "sync_interval_sec": os.getenv("SYNC_INTERVAL_SEC"),
-            "messages_per_stream": os.getenv("MESSAGES_PER_STREAM"),
+        file_config = dotenv_values(config_file)
+        config_vars = {
+            "mongo_db_name": "MONGO_DB_NAME",
+            "mongo_username": "MONGO_USERNAME",
+            "mongo_password": "MONGO_PASSWORD",
+            "mongo_host": "MONGO_HOST",
+            "redis_host": "REDIS_HOST",
+            "redis_port": "REDIS_PORT",
+            "sync_interval_sec": "SYNC_INTERVAL_SEC",
+            "messages_per_stream": "MESSAGES_PER_STREAM",
         }
 
-        try:
-            with open(config_file, "r") as f:
-                file_config = json.load(f)
-        except FileNotFoundError:
-            msg = "Config file not found. Please ensure the config file exists."
-            logger.error(msg)
-            raise FileNotFoundError(msg)
+        # Load configuration from file and environment variables
+        config = {}
+        for key, value in config_vars.items():
+            config_value = file_config.get(value, os.getenv(value))
+            config[key] = config_value
 
-        for key in config:
-            if config[key] is None:
-                config[key] = file_config.get(key)
+            # Check if configuration value is None and raise error if it is
+            if config_value is None:
+                msg = f"Configuration for {key} not found. Please ensure it is set in the environment or the .env file."
+                logger.error(msg)
+                raise ValueError(msg)
 
         return config
