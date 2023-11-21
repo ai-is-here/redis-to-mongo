@@ -48,3 +48,38 @@ def test_bulk_write_ops(mongo_handler):
     for _id, value in zip([id1, id2], values):
         updated_odm = StringODM.objects(id=_id).first()
         assert updated_odm.value == value
+
+
+def test_sync_structure(mongo_handler):
+    sync_strings = SyncStrings(None, None)
+    keys = ["key1", "key2"]
+    sync_strings.sync_structure(keys)
+    for key in keys:
+        assert key in sync_strings.odm_ids
+        assert StringODM.objects(key=key).first() is not None
+
+
+def test_init_no_new_objects_needed(mongo_handler):
+    sync_strings = SyncStrings(None, None)
+    key_types = {
+        "key1": "string",
+        "key2": "string",
+    }
+    StringODM(key="key1").save()
+    StringODM(key="key2").save()
+    sync_strings.init(key_types)
+    assert "key1" in sync_strings.odm_ids
+    assert "key2" in sync_strings.odm_ids
+
+
+def test_init_new_objects_needed(mongo_handler):
+    sync_strings = SyncStrings(None, None)
+    key_types = {
+        "key1": "string",
+        "key2": "string",
+    }
+    sync_strings.init(key_types)
+    assert "key1" in sync_strings.odm_ids
+    assert "key2" in sync_strings.odm_ids
+    assert StringODM.objects(key="key1").first() is not None
+    assert StringODM.objects(key="key2").first() is not None
