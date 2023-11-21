@@ -10,7 +10,8 @@ logs
 langflow.db
 .coverage
 .pytest_cache
-.env
+.env.prod
+.env.test
 # dependencies
 node_modules
 /.pnp
