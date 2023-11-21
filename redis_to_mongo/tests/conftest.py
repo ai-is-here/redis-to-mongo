@@ -10,28 +10,35 @@ NUMBER_OF_CONTAINERS = 3
 NUMBER_OF_ITEMS = 3
 
 
+@pytest.fixture
+def config():
+    return Config(TEST_CONFIG_ENV)
+
+
+@pytest.fixture
+def sync_engine(config):
+    # Initialize SyncEngine with test environment configuration
+    return SyncEngine(config)
+
+
+@pytest.fixture
+def redis_handler(config):
+    # Get a Redis instance
+    return RedisHandler(config)
+
+
+@pytest.fixture
+def mongo_handler(config):
+    # Get a Redis instance
+    return MongoHandler(config)
+
+
 @pytest.fixture(autouse=True)
-def clear_dbs():
+def clear_dbs(redis_handler, mongo_handler):
     # not for parallel consumption haha and not for prod
     # Clear Redis and MongoDB databases before each test
-    config = Config(TEST_CONFIG_ENV)
-    redis_handler = RedisHandler(config)
     redis_handler.client.flushdb()
-
-    mongo_handler = MongoHandler(config)
     mongo_handler.client.drop_database(mongo_handler.db.name)
-
-
-@pytest.fixture
-def sync_engine():
-    # Initialize SyncEngine with test environment configuration
-    return SyncEngine(Config(TEST_CONFIG_ENV))
-
-
-@pytest.fixture
-def redis_handler():
-    # Get a Redis instance
-    return RedisHandler(Config(TEST_CONFIG_ENV))
 
 
 @pytest.fixture

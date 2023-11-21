@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 from pymongo import UpdateOne
 from redis_to_mongo.redis_api import RedisHandler
-from redis_to_mongo.mongo_models import BaseDocument
+from redis_to_mongo.mongo_models import KeyedDocument
 from redis_to_mongo.logger import logger
 from redis_to_mongo.config_loader import Config
 
@@ -13,7 +13,7 @@ from redis_to_mongo.config_loader import Config
 
 class SyncTypeInterface(ABC):
     TYPE = None  # To be defined by each child class
-    ODM_CLASS: type[BaseDocument] | None = None
+    ODM_CLASS: type[KeyedDocument] | None = None
 
     def __init__(self, config: Config, redis_handler: RedisHandler):
         self.redis_handler = redis_handler
@@ -23,7 +23,7 @@ class SyncTypeInterface(ABC):
     def filter_key_types(self, key_types: dict[str, str]) -> list[str]:
         return [key for key, type in key_types.items() if type == self.TYPE]
 
-    def get_odm_class(self) -> type[BaseDocument]:
+    def get_odm_class(self) -> type[KeyedDocument]:
         if self.ODM_CLASS is None:
             logger.error("ODM_CLASS is not defined for this sync type.")
             raise ValueError("ODM_CLASS is not defined for this sync type.")
@@ -37,8 +37,7 @@ class SyncTypeInterface(ABC):
                 self.odm_ids[key] = odm.id
         self.sync_structure(keys)
 
-    def sync_structure(self, key_types: list[str]):
-        keys = self.filter_key_types(key_types)
+    def sync_structure(self, keys: list[str]):
         for key in keys:
             if key not in self.odm_ids:
                 new_odm = self.get_odm_class()(key=key)
@@ -52,7 +51,7 @@ class SyncTypeInterface(ABC):
         self.bulk_update(updates, False)
 
     @abstractmethod
-    def _sync(self) -> dict[str, dict[str, Any]]:
+    def _sync(self, keys: list[str]) -> dict[str, dict[str, Any]]:
         pass
 
     def bulk_update(self, updates: dict[str, dict[str, Any]], ordered) -> None:

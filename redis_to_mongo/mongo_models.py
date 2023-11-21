@@ -30,58 +30,54 @@ class BaseDocument(Document):
         return super().update(*args, **kwargs)
 
 
-class JSONODM(BaseDocument):
+class KeyedDocument(BaseDocument):
     key = StringField(required=True, unique=True)
+    meta = {
+        "abstract": True,
+        "indexes": ["key"],
+    }
+
+
+class JSONODM(KeyedDocument):
     value = DictField(default={})
     meta = {
         "collection": f"json_{DATE_BASED_POSTFIX}",
-        "indexes": ["key"],
     }
 
 
-class StringODM(BaseDocument):
-    key = StringField(required=True, unique=True)
+class StringODM(KeyedDocument):
     value = StringField(default="")
     meta = {
         "collection": f"string_{DATE_BASED_POSTFIX}",
-        "indexes": ["key"],
     }
 
 
-class ListODM(BaseDocument):
-    key = StringField(required=True, unique=True)
+class ListODM(KeyedDocument):
     values = ListField(StringField, default=[])
     meta = {
         "collection": f"list_{DATE_BASED_POSTFIX}",
-        "indexes": ["key"],
     }
 
 
-class ZSetODM(BaseDocument):
-    key = StringField(required=True, unique=True)
+class ZSetODM(KeyedDocument):
     values = ListField(DictField(), default=[])
     meta = {
         "collection": f"zset_{DATE_BASED_POSTFIX}",
-        "indexes": ["key"],
     }
 
 
-class SetODM(BaseDocument):
-    key = StringField(required=True, unique=True)
+class SetODM(KeyedDocument):
     values = ListField(StringField, default=[])
     meta = {
         "collection": f"set_{DATE_BASED_POSTFIX}",
-        "indexes": ["key"],
     }
 
 
-class StreamODM(BaseDocument):
-    key = StringField(required=True, unique=True)
+class StreamODM(KeyedDocument):
     last_redis_read_id = StringField(default="0-0")
 
     meta = {
         "collection": f"stream_{DATE_BASED_POSTFIX}",
-        "indexes": ["key"],
     }
 
 
