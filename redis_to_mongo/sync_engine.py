@@ -20,9 +20,7 @@ class SyncEngine:
 
     def __init__(self, config: Config):
         self.config = config
-        self.redis_handler = RedisHandler(
-            host=config.redis_host, port=config.redis_port
-        )
+        self.redis_handler = RedisHandler(config)
         print(
             f"Path to patch MongoHandler: {MongoHandler.__module__}.{MongoHandler.__name__}"
         )

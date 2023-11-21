@@ -1,38 +1,60 @@
-from mongoengine import Document, StringField, DictField, DateTimeField, ReferenceField
+from mongoengine import (
+    Document,
+    StringField,
+    DictField,
+    DateTimeField,
+    ReferenceField,
+    ListField,
+)
 from mongoengine.queryset.base import DO_NOTHING as MONGO_REF_DELETE_DO_NOTHING
 import datetime
 
 WEEK_POSTFIX = datetime.datetime.utcnow().strftime("%Y_week_%W")
 
 
-class Stream(Document):
+from mongoengine import Document
+
+
+class BaseDocument(Document):
     created_at = DateTimeField(default=datetime.datetime.utcnow)
     updated_at = DateTimeField(default=datetime.datetime.utcnow)
-    name = StringField(required=True, unique=True)
-    metadata_sets = DictField()  # Format: {"set_name": [{...}, {...}]}
+
+    meta = {"abstract": True}
+
+    def save(self, *args, **kwargs):
+        self.updated_at = datetime.datetime.utcnow()
+        return super().save(*args, **kwargs)
+
+    def update(self, *args, **kwargs):
+        self.updated_at = datetime.datetime.utcnow()
+        return super().update(*args, **kwargs)
+
+
+class OrderedSet(BaseDocument):
+    key = StringField(required=True, unique=True)
+    values = ListField(DictField(), required=True)
+    meta = {
+        "collection": f"ordered_set_{WEEK_POSTFIX}",
+        "indexes": ["key"],
+    }
+
+
+class Stream(BaseDocument):
+    key = StringField(required=True, unique=True)
     last_redis_read_id = StringField(default="0")
 
     meta = {
         "collection": f"stream_{WEEK_POSTFIX}",
-        "indexes": ["name"],
+        "indexes": ["key"],
     }
 
-    def save(self, *args, **kwargs):
-        self.updated_at = datetime.datetime.utcnow()
-        return super(Stream, self).save(*args, **kwargs)
 
-    def update(self, *args, **kwargs):
-        self.updated_at = datetime.datetime.utcnow()
-        return super(Stream, self).update(*args, **kwargs)
-
-
-class StreamMessage(Document):
+class StreamMessage(BaseDocument):
     created_at = DateTimeField(default=datetime.datetime.utcnow)
     stream = ReferenceField(
         Stream, reverse_delete_rule=MONGO_REF_DELETE_DO_NOTHING, required=True
     )
     content = DictField(required=True)  # JSON payload
-    type = StringField(default="main", required=True)
 
     meta = {
         "collection": f"stream_message_{WEEK_POSTFIX}",
