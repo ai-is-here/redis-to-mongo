@@ -45,6 +45,7 @@ case "$2" in
             echo "Docker Compose for $1 environment is already running."
         else
             echo "Starting Docker Compose for $1 environment..."
+            docker compose --env-file "$ENV_FILE" -p "$PROJECT_NAME" build .
             docker compose --env-file "$ENV_FILE" -p "$PROJECT_NAME" up -d
         fi
         ;;

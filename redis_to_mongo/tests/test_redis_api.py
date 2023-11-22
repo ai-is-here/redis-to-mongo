@@ -44,9 +44,9 @@ def test_get_ordered_set(redis_handler, redis_populate_zsets, data_dict):
     for zset in data_dict["zsets"]:
         set_values = redis_handler.get_ordered_set(zset)
         assert len(set_values) == NUMBER_OF_ITEMS
-        for member, score in set_values:
-            assert "zset_test_member" in member
-            assert isinstance(score, float)
+        for i, member in enumerate(set_values):
+            assert f"zset_test_member{i}" == member["key"]
+            assert isinstance(member["score"], float)
 
 
 def test_get_set(redis_handler, redis_populate_set, data_dict):

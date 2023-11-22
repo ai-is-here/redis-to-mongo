@@ -29,6 +29,9 @@ class BaseDocument(Document):
         self.updated_at = datetime.datetime.utcnow()
         return super().update(*args, **kwargs)
 
+    def to_dict(self):
+        return self.to_mongo().to_dict()
+
 
 class KeyedDocument(BaseDocument):
     key = StringField(required=True, unique=True)
@@ -60,14 +63,14 @@ class ListODM(KeyedDocument):
 
 
 class ZSetODM(KeyedDocument):
-    values = ListField(DictField(), default=None)
+    values = ListField(DictField(), default=[])
     meta = {
         "collection": f"zset_{DATE_BASED_POSTFIX}",
     }
 
 
 class SetODM(KeyedDocument):
-    values = ListField(StringField(), default=None)
+    values = ListField(StringField(), default=[])
     meta = {
         "collection": f"set_{DATE_BASED_POSTFIX}",
     }
@@ -81,7 +84,7 @@ class StreamODM(KeyedDocument):
     }
 
 
-class StreamMessage(BaseDocument):
+class StreamMessageODM(BaseDocument):
     created_at = DateTimeField(default=datetime.datetime.utcnow)
     stream = ReferenceField(
         StreamODM, reverse_delete_rule=MONGO_REF_DELETE_DO_NOTHING, required=True

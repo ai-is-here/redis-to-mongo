@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 from pymongo import UpdateOne
 from redis_to_mongo.redis_api import RedisHandler
-from redis_to_mongo.mongo_models import KeyedDocument
+from redis_to_mongo.mongo_models import KeyedDocument, BaseDocument
 from redis_to_mongo.logger import logger
 from redis_to_mongo.config_loader import Config
 
@@ -63,7 +63,10 @@ class SyncTypeInterface(ABC):
         ]
         self.bulk_write_ops(operations, ordered)
 
-    def bulk_write_ops(self, operations, ordered):
+    def bulk_write_ops(
+        self, operations, ordered, odm_override: type[BaseDocument] | None = None
+    ):
         if not operations:
             return
-        self.get_odm_class()._get_collection().bulk_write(operations, ordered=ordered)
+        picked_odm = odm_override or self.get_odm_class()
+        picked_odm._get_collection().bulk_write(operations, ordered=ordered)

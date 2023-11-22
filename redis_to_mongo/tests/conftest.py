@@ -2,7 +2,7 @@ import pytest
 from redis_to_mongo.sync_engine import SyncEngine
 from redis_to_mongo.mongo_api import MongoHandler
 from redis_to_mongo.redis_api import RedisHandler
-from redis_to_mongo.mongo_models import StreamODM, StreamMessage
+from redis_to_mongo.mongo_models import StreamODM, StreamMessageODM
 from redis_to_mongo.config_loader import Config
 from redis_to_mongo.constants import TEST_CONFIG_ENV
 
@@ -158,11 +158,11 @@ def mongo_populate_additional_streams(mongo_handler, data_dict):
 
 @pytest.fixture
 def mongo_populate_stream_message(mongo_handler, data_dict):
-    # Populate MongoDB with StreamMessage objects
+    # Populate MongoDB with StreamMessageODM objects
     for i, stream_key in enumerate(data_dict["streams"]):
         stream = Stream.objects.get(key=stream_key)
         for j in range(NUMBER_OF_ITEMS):
-            stream_message = StreamMessage(
+            stream_message = StreamMessageODM(
                 stream=stream, content={"message": f"main_test_message{j}"}
             )
             stream_message.save()
@@ -170,11 +170,11 @@ def mongo_populate_stream_message(mongo_handler, data_dict):
 
 @pytest.fixture
 def mongo_populate_additional_stream_message(mongo_handler, data_dict):
-    # Populate MongoDB with additional StreamMessage objects
+    # Populate MongoDB with additional StreamMessageODM objects
     for i, stream_key in enumerate(data_dict["additional_streams"]):
         stream = Stream.objects.get(key=stream_key)
         for j in range(NUMBER_OF_ITEMS):
-            stream_message = StreamMessage(
+            stream_message = StreamMessageODM(
                 stream=stream, content={"message": f"additional_test_message{j}"}
             )
             stream_message.save()

@@ -62,7 +62,8 @@ class RedisHandler:
         try:
             set_values = self.client.zrange(set_name, 0, -1, withscores=True)  # type: ignore
             logger.debug(f"Retrieved all values from set {set_name}: {set_values}")
-            return cast(list[dict[str, Any]], set_values)
+            dict_list = list(map(lambda t: {"key": t[0], "score": t[1]}, set_values))
+            return dict_list
         except Exception as e:
             logger.error(f"Error retrieving values from set {set_name}: {str(e)}")
             raise e
@@ -74,7 +75,8 @@ class RedisHandler:
         try:
             set_values = self.client.smembers(set_name)  # type: ignore
             logger.debug(f"Retrieved all values from set {set_name}: {set_values}")
-            return cast(list[str], list(set_values))
+            as_list = list(set_values)
+            return cast(list[str], as_list)
         except Exception as e:
             logger.error(f"Error retrieving values from set {set_name}: {str(e)}")
             raise e
