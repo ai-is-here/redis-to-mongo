@@ -169,3 +169,37 @@ def test_sync_with_no_prepopulated_mongo(
         mongo_message.rid
         == redis_handler.client.xinfo_stream(test_stream)["last-generated-id"]
     )
+
+
+def test_sync_stream_with_redis_deletion_active_test(
+    sync_streams_fixture, redis_handler, mongo_handler, data_dict
+):
+    # Populate Redis with a stream
+    test_stream = "test:stream:deletion"
+    test_message = {"message": "test_message_for_deletion"}
+    redis_handler.client.xadd(test_stream, test_message)
+
+    # Initialize MongoDB with the stream from Redis
+    sync_streams_fixture.init(redis_handler.get_all_key_types())
+
+    # Check MongoDB for the state of StreamODM after initial sync
+    initial_stream_odm = StreamODM.objects(key=test_stream).first()
+    assert initial_stream_odm is not None
+    assert initial_stream_odm.active_now is True
+    assert len(initial_stream_odm.activity_history) == 0
+
+    # Delete the stream in Redis
+    redis_handler.client.delete(test_stream)
+
+    # Sync after deletion to reflect changes in MongoDB
+
+    key_types = redis_handler.get_all_key_types()
+
+    sync_streams_fixture.sync(key_types)
+
+    # Check MongoDB for the state of StreamODM after deletion
+    stream_odm = StreamODM.objects(key=test_stream).first()
+    assert stream_odm is not None
+    assert stream_odm.active_now is False
+    assert len(stream_odm.activity_history) == 1
+    assert stream_odm.activity_history[0]["active_now"] is False

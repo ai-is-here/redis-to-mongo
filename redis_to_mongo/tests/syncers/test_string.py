@@ -48,7 +48,7 @@ def test_full_cycle(sync_strings_fixture, data_dict):
     sync_strings_fixture.redis_handler.client.delete("key1")
     sync_strings_fixture.redis_handler.client.set("key1", "new_value_INVISIBLE")
     sync_strings_fixture.sync({"key2": "list"})
-    assert StringODM.objects(key="key1").first().value == "new_value"
+    assert StringODM.objects(key="key1").first().value == None
 
     # Step 6: Sync again with the original keys and check the value of "key1"
     sync_strings_fixture.sync({"key1": "string", "key2": "list"})

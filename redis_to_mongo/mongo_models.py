@@ -45,10 +45,11 @@ class KeyedDocument(BaseDocument):
         "indexes": ["key", "active_now"],
     }
 
-    def update_active_now_no_save(self, active_now: bool) -> None:
+    def update_active_now_no_save(self, active_now: bool) -> bool:
         if active_now == self.active_now:
-            return
+            return False
         self.active_now = active_now
+        return True
 
     def reset_fields_to_default_no_save(self):
         for field_name in self.RESET_FIELDS:
@@ -111,13 +112,15 @@ class StreamODM(KeyedDocument):
         "collection": f"stream_{DATE_BASED_POSTFIX}",
     }
 
-    def update_active_now_no_save(self, active_now: bool) -> None:
-        super().update_active_now_no_save(active_now)
+    def update_active_now_no_save(self, active_now: bool) -> bool:
+        if not super().update_active_now_no_save(active_now):
+            return False
         if self.activity_history is None:
             self.activity_history: list[dict[str, Any]] = []
         self.activity_history.append(
             {"timestamp": datetime.datetime.utcnow(), "active_now": active_now}
         )
+        return True
 
 
 class StreamMessageODM(BaseDocument):

@@ -30,7 +30,7 @@ class SyncTypeInterface(ABC):
         return self.ODM_CLASS
 
     def init(self, key_types: dict[str, str]):
-        active_odms = self.get_odm_class().objects(active_now=True)
+        active_odms = self.get_odm_class().objects(active_now=True).all()
         self.odm_ids = {odm.key: odm.id for odm in active_odms}
         keys = self.filter_key_types(key_types)
         self.sync_structure(keys)

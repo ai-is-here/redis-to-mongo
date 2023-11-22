@@ -34,7 +34,7 @@ class RedisHandler:
         self,
         last_read_ids: dict[str, str],
         count: int = 10,
-        block: int = 0,
+        block: int | None = None,
     ) -> dict[str, list[tuple[str, dict[str, str]]]]:
         try:
             messages = self.client.xread(  # type: ignore
