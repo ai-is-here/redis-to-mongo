@@ -23,6 +23,13 @@ class SyncEngine:
         self.changes_processed = {"unk": 0}
         self.init_syncers()
 
+    def shutdown(self):
+        """
+        Disconnects the Mongo and Redis handlers.
+        """
+        self.mongo_handler.client.close()
+        self.redis_handler.client.close()
+
     def init_syncers(self):
         key_types = self.redis_handler.get_all_key_types()
         self.syncers: list[SyncTypeInterface] = []
@@ -55,14 +62,6 @@ class SyncEngine:
             self.changes_processed[syncer.TYPE] = syncer.changes_processed  # type: ignore
 
     def run(self) -> None:
-        try:
-            self._run()
-        except KeyboardInterrupt:
-            logger.info("Graceful shutdown initiated.")
-            # Perform any necessary cleanup here
-            logger.info("SyncEngine has been stopped.")
-
-    def _run(self) -> None:
         """
         Run the SyncEngine indefinitely, synchronizing data between Redis and MongoDB.
         """
@@ -95,7 +94,6 @@ class SyncEngine:
         """
         Print the statistics of changes processed in a formatted table.
         """
-        print("Changes synced:")
         sorted_stats = sorted(
             self.changes_processed.items(), key=lambda item: (-item[1], item[0])
         )
@@ -105,13 +103,14 @@ class SyncEngine:
         )
         header = f"{'Type'.ljust(max_key_length)} | {'Count'.rjust(max_value_length)}"
         total_changes = sum(value for _, value in sorted_stats)
-        print(header)
-        print("-" * (max_key_length + max_value_length + 3))
-        print(
+        stats_table = [header]
+        stats_table.append("-" * (max_key_length + max_value_length + 3))
+        stats_table.append(
             f"{'Total'.ljust(max_key_length)} | {str(total_changes).rjust(max_value_length-3)}"
         )
-        print("-" * (max_key_length + max_value_length + 3))
+        stats_table.append("-" * (max_key_length + max_value_length + 3))
         for key, value in sorted_stats:
-            print(
+            stats_table.append(
                 f"{key.ljust(max_key_length)} | {str(value).rjust(max_value_length-3)}"
             )
+        logger.info("\n" + "\n".join(stats_table))

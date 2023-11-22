@@ -23,6 +23,7 @@ class Config:
             "mongo_username": ("MONGO_DB_USER", str),
             "mongo_password": ("MONGO_DB_PASSWORD", str),
             "mongo_host": ("MONGO_HOST", str),
+            "mongo_port": ("MONGO_PORT", int),
             "redis_host": ("REDIS_HOST", str),
             "redis_port": ("REDIS_PORT", int),
             "sync_interval_sec": ("SYNC_INTERVAL_SEC", int),

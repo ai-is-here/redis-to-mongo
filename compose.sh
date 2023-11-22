@@ -44,8 +44,9 @@ case "$2" in
         if is_running "$PROJECT_NAME"; then
             echo "Docker Compose for $1 environment is already running."
         else
+            echo "Building Docker Compose for $1 environment..."
+            docker compose --env-file "$ENV_FILE" -p "$PROJECT_NAME" build redis-to-mongo-sync-script
             echo "Starting Docker Compose for $1 environment..."
-            docker compose --env-file "$ENV_FILE" -p "$PROJECT_NAME" build .
             docker compose --env-file "$ENV_FILE" -p "$PROJECT_NAME" up -d
         fi
         ;;

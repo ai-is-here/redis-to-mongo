@@ -12,6 +12,7 @@ class MongoHandler:
             c = config.config
             cls._instance.client = connect(
                 host=c["mongo_host"],
+                port=c["mongo_port"],
                 db=c["mongo_db_name"],
                 username=c["mongo_username"],
                 password=c["mongo_password"],
