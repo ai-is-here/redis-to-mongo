@@ -1,3 +1,4 @@
+from datetime import timedelta
 import time
 from collections import defaultdict
 
@@ -51,9 +52,17 @@ class SyncEngine:
                 self.changes_processed["unk"] += 1
         for syncer in self.syncers:
             syncer.sync(key_types)
-            self.changes_processed[syncer.TYPE] += syncer.changes_processed  # type: ignore
+            self.changes_processed[syncer.TYPE] = syncer.changes_processed  # type: ignore
 
     def run(self) -> None:
+        try:
+            self._run()
+        except KeyboardInterrupt:
+            logger.info("Graceful shutdown initiated.")
+            # Perform any necessary cleanup here
+            logger.info("SyncEngine has been stopped.")
+
+    def _run(self) -> None:
         """
         Run the SyncEngine indefinitely, synchronizing data between Redis and MongoDB.
         """
@@ -61,20 +70,23 @@ class SyncEngine:
         logger.info("SyncEngine started at: %s", start_time)
         uptime = 0
         while True:
+            print("-" * 60)
             round_start_time = time.time()
             self.sync()
             # Add logic for processing sets and metadata streams if necessary
             round_elapsed_time = time.time() - round_start_time
-            logger.info(f"Round took: {round_elapsed_time} seconds")
+            logger.info(f"Round took: {round_elapsed_time:.5f} seconds")
             elapsed_time = time.time() - start_time
             uptime += elapsed_time
-            logger.info(f"SyncEngine has been running for: {uptime} seconds")
+            logger.info(
+                f"SyncEngine has been running for: {timedelta(seconds=int(uptime))}"
+            )
             self.print_changes_processed_stats()
             sleep_time = max(
                 0, self.config.config["sync_interval_sec"] - round_elapsed_time
             )
             logger.info(
-                f"Sleeping for: {sleep_time} seconds out of {self.config.config['sync_interval_sec']} max value"
+                f"Sleeping for: {sleep_time:.2f}/{self.config.config['sync_interval_sec']} seconds."
             )
             time.sleep(sleep_time)
             start_time = time.time()
@@ -88,11 +100,18 @@ class SyncEngine:
             self.changes_processed.items(), key=lambda item: (-item[1], item[0])
         )
         max_key_length = max(len(key) for key in self.changes_processed.keys())
-        max_value_length = max(
-            len(str(value)) for value in self.changes_processed.values()
+        max_value_length = (
+            max(len(str(value)) for value in self.changes_processed.values()) + 6
         )
         header = f"{'Type'.ljust(max_key_length)} | {'Count'.rjust(max_value_length)}"
+        total_changes = sum(value for _, value in sorted_stats)
         print(header)
         print("-" * (max_key_length + max_value_length + 3))
+        print(
+            f"{'Total'.ljust(max_key_length)} | {str(total_changes).rjust(max_value_length-3)}"
+        )
+        print("-" * (max_key_length + max_value_length + 3))
         for key, value in sorted_stats:
-            print(f"{key.ljust(max_key_length)} | {str(value).rjust(max_value_length)}")
+            print(
+                f"{key.ljust(max_key_length)} | {str(value).rjust(max_value_length-3)}"
+            )
