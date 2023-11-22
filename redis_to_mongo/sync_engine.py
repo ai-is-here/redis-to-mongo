@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 import time
 from collections import defaultdict
 
@@ -66,7 +66,9 @@ class SyncEngine:
         Run the SyncEngine indefinitely, synchronizing data between Redis and MongoDB.
         """
         start_time = time.time()
-        logger.info("SyncEngine started at: %s", start_time)
+        logger.info(
+            "SyncEngine started at: %s", datetime.now().astimezone().isoformat()
+        )
         uptime = 0
         while True:
             print("-" * 60)
@@ -101,9 +103,10 @@ class SyncEngine:
         max_value_length = (
             max(len(str(value)) for value in self.changes_processed.values()) + 6
         )
+        stats_table = ["Approx changes processed:"]
         header = f"{'Type'.ljust(max_key_length)} | {'Count'.rjust(max_value_length)}"
         total_changes = sum(value for _, value in sorted_stats)
-        stats_table = [header]
+        stats_table.append(header)
         stats_table.append("-" * (max_key_length + max_value_length + 3))
         stats_table.append(
             f"{'Total'.ljust(max_key_length)} | {str(total_changes).rjust(max_value_length-3)}"
