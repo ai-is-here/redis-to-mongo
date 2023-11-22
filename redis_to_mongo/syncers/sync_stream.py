@@ -25,6 +25,8 @@ class SyncStreams(SyncTypeInterface):
 
     def _sync(self) -> dict[str, dict[str, Any]]:
         updates = {}
+        if not self.last_read_ids:
+            return {}
         all_messages = self.redis_handler.read_messages(
             self.last_read_ids, count=self.config.config["messages_per_stream"]
         )
