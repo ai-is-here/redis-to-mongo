@@ -18,9 +18,6 @@ class SyncEngine:
     def __init__(self, config: Config):
         self.config = config
         self.redis_handler = RedisHandler(config)
-        print(
-            f"Path to patch MongoHandler: {MongoHandler.__module__}.{MongoHandler.__name__}"
-        )
         self.mongo_handler = MongoHandler(config)
         self.init_syncers()
 

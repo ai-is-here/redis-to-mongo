@@ -33,12 +33,23 @@ def mongo_handler(config):
     return MongoHandler(config)
 
 
-@pytest.fixture(autouse=True)
-def clear_dbs(redis_handler, mongo_handler):
-    # not for parallel consumption haha and not for prod
-    # Clear Redis and MongoDB databases before each test
-    redis_handler.client.flushdb()
+@pytest.fixture(scope="session", autouse=True)
+def clear_dbs_before_session():
+    # Clear Redis and MongoDB databases before the test session starts
+    config = Config(TEST_CONFIG_ENV)
+    RedisHandler(config).client.flushdb()
+    mongo_handler = MongoHandler(config)
     mongo_handler.client.drop_database(mongo_handler.db.name)
+
+
+@pytest.fixture(autouse=True)
+def clear_dbs_after_test(redis_handler, mongo_handler, request):
+    # Clear Redis and MongoDB databases after each test
+    def teardown():
+        redis_handler.client.flushdb()
+        mongo_handler.client.drop_database(mongo_handler.db.name)
+
+    request.addfinalizer(teardown)
 
 
 @pytest.fixture
@@ -92,7 +103,7 @@ def redis_populate_list(redis_handler, data_dict):
     # Populate Redis with unknown data type list
     for i, list_key in enumerate(data_dict["lists"]):
         for j in range(NUMBER_OF_ITEMS):
-            redis_handler.client.lpush(list_key, f"list_test_member{j}")
+            redis_handler.client.rpush(list_key, f"list_test_member{j}")
 
 
 @pytest.fixture
