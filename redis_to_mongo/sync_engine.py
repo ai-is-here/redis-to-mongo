@@ -19,6 +19,7 @@ class SyncEngine:
         self.config = config
         self.redis_handler = RedisHandler(config)
         self.mongo_handler = MongoHandler(config)
+        self.changes_processed = {"unk": 0}
         self.init_syncers()
 
     def init_syncers(self):
@@ -36,6 +37,7 @@ class SyncEngine:
             s = syncer(self.config, self.redis_handler)
             s.init(key_types)
             self.syncers.append(s)
+            self.changes_processed[s.TYPE] = 0
 
     def sync(self):
         key_types = self.redis_handler.get_all_key_types()
@@ -46,8 +48,10 @@ class SyncEngine:
                     f"Key {key} has unsupported type {key_types[key]} and will be removed from synchronization. Allowed types: {implemented_types=}."
                 )
                 del key_types[key]
+                self.changes_processed["unk"] += 1
         for syncer in self.syncers:
             syncer.sync(key_types)
+            self.changes_processed[syncer.TYPE] += syncer.changes_processed  # type: ignore
 
     def run(self) -> None:
         """
@@ -65,9 +69,30 @@ class SyncEngine:
             elapsed_time = time.time() - start_time
             uptime += elapsed_time
             logger.info(f"SyncEngine has been running for: {uptime} seconds")
-            sleep_time = max(0, self.config.sync_interval_sec - round_elapsed_time)
+            self.print_changes_processed_stats()
+            sleep_time = max(
+                0, self.config.config["sync_interval_sec"] - round_elapsed_time
+            )
             logger.info(
-                f"Sleeping for: {sleep_time} seconds out of {self.config.sync_interval_sec} max value"
+                f"Sleeping for: {sleep_time} seconds out of {self.config.config['sync_interval_sec']} max value"
             )
             time.sleep(sleep_time)
             start_time = time.time()
+
+    def print_changes_processed_stats(self):
+        """
+        Print the statistics of changes processed in a formatted table.
+        """
+        print("Changes synced:")
+        sorted_stats = sorted(
+            self.changes_processed.items(), key=lambda item: (-item[1], item[0])
+        )
+        max_key_length = max(len(key) for key in self.changes_processed.keys())
+        max_value_length = max(
+            len(str(value)) for value in self.changes_processed.values()
+        )
+        header = f"{'Type'.ljust(max_key_length)} | {'Count'.rjust(max_value_length)}"
+        print(header)
+        print("-" * (max_key_length + max_value_length + 3))
+        for key, value in sorted_stats:
+            print(f"{key.ljust(max_key_length)} | {str(value).rjust(max_value_length)}")

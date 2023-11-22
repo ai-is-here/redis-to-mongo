@@ -13,7 +13,7 @@ class Config:
         """
         self.config = self.load_config(config_file)
 
-    def load_config(self, config_file: str) -> dict[str, str | None]:
+    def load_config(self, config_file: str) -> dict[str, str | int | None]:
         """
         Load the configuration from the environment variables and the config file.
         """

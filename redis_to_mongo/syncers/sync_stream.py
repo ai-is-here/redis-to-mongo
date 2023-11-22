@@ -42,4 +42,5 @@ class SyncStreams(SyncTypeInterface):
             updates[stream_id] = {"last_redis_read_id": self.last_read_ids[stream]}
         # messages are unordered and important field internal time we had in stream or message id i guess
         self.bulk_write_ops(write_ops, ordered=False, odm_override=StreamMessageODM)
+        self.changes_processed += len(write_ops)
         return updates

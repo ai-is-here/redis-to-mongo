@@ -19,6 +19,7 @@ class SyncTypeInterface(ABC):
         self.redis_handler = redis_handler
         self.config = config
         self.odm_ids = {}  # keys: ODMs from mongo
+        self.changes_processed = 0  # approx
 
     def filter_key_types(self, key_types: dict[str, str]) -> list[str]:
         return [key for key, type in key_types.items() if type == self.TYPE]
@@ -61,6 +62,7 @@ class SyncTypeInterface(ABC):
         keys = self.filter_key_types(key_types)
         self.sync_structure(keys)
         updates = self._sync()
+        self.changes_processed += len(updates)
         self.bulk_update(updates, False)
 
     @abstractmethod
