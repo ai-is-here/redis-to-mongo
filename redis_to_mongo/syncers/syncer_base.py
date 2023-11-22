@@ -30,6 +30,8 @@ class SyncTypeInterface(ABC):
         return self.ODM_CLASS
 
     def init(self, key_types: dict[str, str]):
+        active_odms = self.get_odm_class().objects(active_now=True)
+        self.odm_ids = {odm.key: odm.id for odm in active_odms}
         keys = self.filter_key_types(key_types)
         self.sync_structure(keys)
 
@@ -39,13 +41,21 @@ class SyncTypeInterface(ABC):
                 odm = self.get_odm_class().objects(key=key).first()
                 if odm:
                     self.odm_ids[key] = odm.id
+                    odm.update_active_now_no_save(True)
+                    odm.save()
                 else:
-                    new_odm = self.get_odm_class()(key=key)
-                    new_odm.save()
-                    self.odm_ids[key] = new_odm.id
+                    odm = self.get_odm_class()(key=key, active_now=True)
+                    odm.save()
+                    self.odm_ids[key] = odm.id
+
         for odm_key in list(self.odm_ids.keys()):
+            # what happens when the key emptied during not running? it's active but no longer appears in the keys so we do not update it
             if odm_key not in keys:
                 self.odm_ids.pop(odm_key)
+                odm = self.get_odm_class().objects(key=odm_key).first()
+                odm.update_active_now_no_save(False)
+                odm.reset_fields_to_default_no_save()
+                odm.save()
 
     def sync(self, key_types: dict[str, str]):
         keys = self.filter_key_types(key_types)

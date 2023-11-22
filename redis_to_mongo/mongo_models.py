@@ -1,3 +1,4 @@
+from typing import Any
 from mongoengine import (
     Document,
     StringField,
@@ -5,6 +6,7 @@ from mongoengine import (
     DateTimeField,
     ReferenceField,
     ListField,
+    BooleanField,
 )
 from mongoengine.queryset.base import DO_NOTHING as MONGO_REF_DELETE_DO_NOTHING
 import datetime
@@ -34,54 +36,88 @@ class BaseDocument(Document):
 
 
 class KeyedDocument(BaseDocument):
+    RESET_FIELDS = []
     key = StringField(required=True, unique=True)
+    active_now = BooleanField(required=True)
+
     meta = {
         "abstract": True,
-        "indexes": ["key"],
+        "indexes": ["key", "active_now"],
     }
+
+    def update_active_now_no_save(self, active_now: bool) -> None:
+        if active_now == self.active_now:
+            return
+        self.active_now = active_now
+
+    def reset_fields_to_default_no_save(self):
+        for field_name in self.RESET_FIELDS:
+            field = self._fields.get(field_name)
+            if field is None:
+                raise AttributeError(
+                    f"Field {field_name} does not exist in the Document."
+                )
+            if not hasattr(field, "default"):
+                raise ValueError(f"No default value for field {field_name}.")
+            setattr(self, field_name, field.default())
 
 
 class JSONODM(KeyedDocument):
-    value = DictField(default=None)
+    RESET_FIELDS = ["value"]
+    value = DictField(default=lambda: None)
     meta = {
         "collection": f"json_{DATE_BASED_POSTFIX}",
     }
 
 
 class StringODM(KeyedDocument):
-    value = StringField(default=None)
+    RESET_FIELDS = ["value"]
+    value = StringField(default=lambda: None)
     meta = {
         "collection": f"string_{DATE_BASED_POSTFIX}",
     }
 
 
 class ListODM(KeyedDocument):
-    values = ListField(StringField(), default=[])
+    RESET_FIELDS = ["values"]
+    values = ListField(StringField(), default=lambda: [])
     meta = {
         "collection": f"list_{DATE_BASED_POSTFIX}",
     }
 
 
 class ZSetODM(KeyedDocument):
-    values = ListField(DictField(), default=[])
+    RESET_FIELDS = ["values"]
+    values = ListField(DictField(), default=lambda: [])
     meta = {
         "collection": f"zset_{DATE_BASED_POSTFIX}",
     }
 
 
 class SetODM(KeyedDocument):
-    values = ListField(StringField(), default=[])
+    RESET_FIELDS = ["values"]
+    values = ListField(StringField(), default=lambda: [])
     meta = {
         "collection": f"set_{DATE_BASED_POSTFIX}",
     }
 
 
 class StreamODM(KeyedDocument):
-    last_redis_read_id = StringField(default="0-0")
+    RESET_FIELDS = ["last_redis_read_id"]
+    last_redis_read_id = StringField(default=lambda: "0-0")
+    activity_history = ListField(DictField(), default=[])  # type: ignore
 
     meta = {
         "collection": f"stream_{DATE_BASED_POSTFIX}",
     }
+
+    def update_active_now_no_save(self, active_now: bool) -> None:
+        super().update_active_now_no_save(active_now)
+        if self.activity_history is None:
+            self.activity_history: list[dict[str, Any]] = []
+        self.activity_history.append(
+            {"timestamp": datetime.datetime.utcnow(), "active_now": active_now}
+        )
 
 
 class StreamMessageODM(BaseDocument):
