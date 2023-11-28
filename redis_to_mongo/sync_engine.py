@@ -89,7 +89,9 @@ class SyncEngine:
             logger.info(
                 f"Sleeping for: {sleep_time:.2f}/{self.config.config['sync_interval_sec']} seconds."
             )
-            time.sleep(sleep_time)
+            for _ in range(int(sleep_time)):
+                time.sleep(1)
+            time.sleep(sleep_time % 1)
             start_time = time.time()
 
     def print_changes_processed_stats(self):
@@ -103,7 +105,7 @@ class SyncEngine:
         max_value_length = (
             max(len(str(value)) for value in self.changes_processed.values()) + 6
         )
-        stats_table = ["Approx changes processed:"]
+        stats_table = ["Approx changes processed:\n"]
         header = f"{'Type'.ljust(max_key_length)} | {'Count'.rjust(max_value_length)}"
         total_changes = sum(value for _, value in sorted_stats)
         stats_table.append(header)

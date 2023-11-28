@@ -2,11 +2,13 @@ version: '3.8'
 services:
   mongodb-entity:
     container_name: ${MODE}-mongodb-entity-compose
+    command: --bind_ip localhost,127.0.0.1,mongodb-entity --replSet rs0 --auth --keyFile /etc/mongo/mongodb-keyfile
     image: mongo:7.0.2
     ports:
       - "${MONGO_PORT}:27017"
     volumes:
       - ${MONGO_VOLUME}:/data/db
+      - ${PROJECT_PATH}/mongodb-keyfile:/etc/mongo/mongodb-keyfile:ro
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_DB_USER}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_DB_PASSWORD}

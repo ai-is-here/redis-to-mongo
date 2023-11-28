@@ -1,0 +1,18 @@
+generate key for mongo auth
+openssl rand -base64 756 > mongodb-keyfile
+chmod 400 mongodb-keyfile
+sudo chown 999:999 mongodb-keyfile
+
+then first login into instance and do rs.initiate() single member replica set
+
+udate host config with mongodb-entity:27017 and rs.reconfig(cfg, { force: true })
+
+ var cfg = rs.conf().
+Update the hostname in the cfg.members[0].host field to a resolvable hostname or IP address.
+Apply the new configuration with rs.reconfig(cfg).
+
+
+
+for external add hostname on host
+127.0.0.1 localhost
+127.0.0.1 mongodb-entity
