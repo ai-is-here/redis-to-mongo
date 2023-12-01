@@ -11,7 +11,7 @@ from mongoengine import (
 from mongoengine.queryset.base import DO_NOTHING as MONGO_REF_DELETE_DO_NOTHING
 import datetime
 
-DATE_BASED_POSTFIX = datetime.datetime.utcnow().strftime("%Y_month_%m")
+DATE_BASED_POSTFIX = "acc" # datetime.datetime.utcnow().strftime("%Y_month_%m")
 
 
 from mongoengine import Document
