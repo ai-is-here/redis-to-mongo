@@ -1,7 +1,6 @@
 import signal
 import sys
 
-from redis_to_mongo.config_loader import Config
 from redis_to_mongo.constants import PROD_CONFIG_ENV, TEST_CONFIG_ENV
 from redis_to_mongo.sync_engine import SyncEngine
 from redis_to_mongo.logger import logger
@@ -17,8 +16,7 @@ if __name__ == "__main__":
     else:
         CONFIG_PATH = TEST_CONFIG_ENV
 
-    config = Config(CONFIG_PATH)
-    se = SyncEngine(config)
+    se = SyncEngine(config_path=CONFIG_PATH)
 
     def signal_handler(signum, frame):
         logger.info("Graceful shutdown initiated.")

@@ -1,6 +1,6 @@
 generate key for mongo auth
 openssl rand -base64 756 > mongodb-keyfile
-chmod 400 mongodb-keyfile
+sudo chmod 400 mongodb-keyfile
 sudo chown 999:999 mongodb-keyfile
 
 then first login into instance and do rs.initiate() single member replica set

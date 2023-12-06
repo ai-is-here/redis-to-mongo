@@ -2,9 +2,11 @@ from abc import ABC, abstractmethod
 from typing import Any
 from pymongo import UpdateOne
 from redis_to_mongo.redis_api import RedisHandler
-from redis_to_mongo.mongo_models import KeyedDocument, BaseDocument
+from redis_to_mongo.redis_to_mongo_mongo_modules.mongo_models import (
+    KeyedDocument,
+    BaseDocument,
+)
 from redis_to_mongo.logger import logger
-from redis_to_mongo.config_loader import Config
 
 
 # string, list, set, zset, hash and stream
@@ -15,9 +17,8 @@ class SyncTypeInterface(ABC):
     TYPE = None  # To be defined by each child class
     ODM_CLASS: type[KeyedDocument] | None = None
 
-    def __init__(self, config: Config, redis_handler: RedisHandler):
+    def __init__(self, redis_handler: RedisHandler):
         self.redis_handler = redis_handler
-        self.config = config
         self.odm_ids = {}  # keys: ODMs from mongo
         self.changes_processed = 0  # approx
 

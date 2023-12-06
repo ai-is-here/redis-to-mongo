@@ -1,5 +1,5 @@
 from typing import Any
-from redis_to_mongo.mongo_models import ListODM
+from redis_to_mongo.redis_to_mongo_mongo_modules.mongo_models import ListODM
 from redis_to_mongo.syncers.syncer_base import SyncTypeInterface
 
 

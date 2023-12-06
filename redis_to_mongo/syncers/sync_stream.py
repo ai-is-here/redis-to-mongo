@@ -1,6 +1,9 @@
 from typing import Any
 from pymongo import InsertOne
-from redis_to_mongo.mongo_models import StreamODM, StreamMessageODM
+from redis_to_mongo.redis_to_mongo_mongo_modules.mongo_models import (
+    StreamODM,
+    StreamMessageODM,
+)
 from redis_to_mongo.syncers.syncer_base import SyncTypeInterface
 
 
@@ -27,9 +30,7 @@ class SyncStreams(SyncTypeInterface):
         updates = {}
         if not self.last_read_ids:
             return {}
-        all_messages = self.redis_handler.read_messages(
-            self.last_read_ids, count=self.config.config["messages_per_stream"]
-        )
+        all_messages = self.redis_handler.read_messages(self.last_read_ids)
         # will need to update last read ids only for the streams that got read and we assume other values unchanged
         write_ops = []
         for stream, messages in all_messages.items():

@@ -1,20 +1,21 @@
 from typing import Any, cast
 import redis
 from redis_to_mongo.logger import logger
-from redis_to_mongo.config_loader import Config
+from redis_to_mongo.config_loader import RedisConfig
 
 
 class RedisHandler:
     DB_NUMBER = 0
     _instance = None
 
-    def __new__(cls, config: Config):
+    def __new__(cls, config: RedisConfig):
         if cls._instance is None:
             cls._instance = super(RedisHandler, cls).__new__(cls)
             cls._instance.client = cls._instance._initialize_redis_client(config)
+            cls._instance.config = config
         return cls._instance
 
-    def _initialize_redis_client(self, config: Config) -> redis.Redis:
+    def _initialize_redis_client(self, config: RedisConfig) -> redis.Redis:
         try:
             client: redis.Redis = redis.Redis(
                 host=config.config["redis_host"],
@@ -33,13 +34,12 @@ class RedisHandler:
     def read_messages(
         self,
         last_read_ids: dict[str, str],
-        count: int = 10,
         block: int | None = None,
     ) -> dict[str, list[tuple[str, dict[str, str]]]]:
         try:
             messages = self.client.xread(  # type: ignore
                 last_read_ids,
-                count=count,
+                count=self.config.config["messages_per_stream"],
                 block=block,
             )
             messages = cast(list[Any], messages)

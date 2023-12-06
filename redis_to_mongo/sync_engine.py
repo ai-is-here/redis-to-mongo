@@ -2,12 +2,12 @@ from datetime import datetime, timedelta
 import time
 from collections import defaultdict
 
-from redis_to_mongo.config_loader import Config
+from redis_to_mongo.config_loader import RedisConfig, SyncerConfig
+from redis_to_mongo.redis_to_mongo_mongo_modules.config_loader import MongoConfig
+from redis_to_mongo.redis_to_mongo_mongo_modules.mongo_api import MongoHandler
 from redis_to_mongo.logger import logger
 from redis_to_mongo.syncers import *
 from redis_to_mongo.redis_api import RedisHandler
-
-from redis_to_mongo.mongo_api import MongoHandler
 
 
 class SyncEngine:
@@ -16,10 +16,10 @@ class SyncEngine:
     It uses the RedisHandler to interact with Redis and the Mongo API to interact with MongoDB.
     """
 
-    def __init__(self, config: Config):
-        self.config = config
-        self.redis_handler = RedisHandler(config)
-        self.mongo_handler = MongoHandler(config)
+    def __init__(self, config_path: str):
+        self.config = SyncerConfig(config_path)
+        self.redis_handler = RedisHandler(RedisConfig(config_path))
+        self.mongo_handler = MongoHandler(MongoConfig(config_path))
         self.changes_processed = {"unk": 0}
         self.init_syncers()
 
@@ -42,7 +42,7 @@ class SyncEngine:
             SyncZSets,
         ]
         for syncer in syncer_classes:
-            s = syncer(self.config, self.redis_handler)
+            s = syncer(self.redis_handler)
             s.init(key_types)
             self.syncers.append(s)
             self.changes_processed[s.TYPE] = 0

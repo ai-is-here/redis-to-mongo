@@ -1,12 +1,11 @@
-from bson import UuidRepresentation
 from mongoengine import connect
-from redis_to_mongo.config_loader import Config
+from redis_to_mongo_mongo_modules.config_loader import MongoConfig
 
 
 class MongoHandler:
     _instance = None
 
-    def __new__(cls, config: Config):
+    def __new__(cls, config: MongoConfig):
         if cls._instance is None:
             cls._instance = super(MongoHandler, cls).__new__(cls)
             c = config.config
