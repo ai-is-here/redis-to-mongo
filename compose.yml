@@ -25,6 +25,7 @@ services:
       - REDIS_ARGS=${REDIS_ARGS}
 
   redis-to-mongo-sync-script:
+    container_name: ${MODE}-redis-to-mongo-sync-script-compose
     build: .
     depends_on:
       - mongodb-entity
